@@ -54,7 +54,17 @@
   document.getElementById('hilfeZu').onclick = function () { hilfe.classList.remove('zeigen'); };
 
   rahmen.addEventListener('load', function () { lade.classList.add('weg'); });
-  rahmen.src = APP + (location.hash || '');   // #tablet wird durchgereicht
+  // „Teilen an den Familienplaner" (manifest → share_target): Geteiltes kommt als
+  // ?titel=&text=&url= hier an und geht als ?teilen=<JSON> an die Web-App weiter.
+  var such = new URLSearchParams(location.search);
+  var geteilt = { titel: such.get('titel') || '', text: such.get('text') || '', url: such.get('url') || '' };
+  var ziel = APP;
+  if (geteilt.titel || geteilt.text || geteilt.url) {
+    ziel += '?teilen=' + encodeURIComponent(JSON.stringify(geteilt));
+    // Adresse aufräumen, damit ein Neuladen nicht noch einmal „teilt"
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (f) {}
+  }
+  rahmen.src = ziel + (location.hash || '');   // #tablet wird durchgereicht
 
   // Die App meldet sich per postMessage, sobald sie wirklich läuft. Kommt die
   // Meldung nicht (Google will erst eine Anmeldung sehen, die im Rahmen nicht
