@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Familienplaner</title>
+<meta name="theme-color" content="#16204e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="logo-192.png">
+<link rel="apple-touch-icon" href="logo-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Familienplaner">
+<style>
+  /* Hülle um die Apps-Script-App: eingebettet erscheint Googles Hinweisbalken
+     („Diese Anwendung wurde von einem Google Apps Script-Nutzer erstellt")
+     nicht – er sitzt nur im äußeren Dokument von /exec (nachgemessen 21.07.2026). */
+  html, body { margin: 0; height: 100%; background: #0b1030; overflow: hidden; }
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #0b1030; }
+  .lade {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; color: #fff; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px;
+    background: linear-gradient(150deg, #0b1030, #16204e 55%, #10314c); transition: opacity .4s; z-index: 2;
+  }
+  .lade img { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .lade.weg { opacity: 0; pointer-events: none; }
+  /* Hilfe, falls die Google-Anmeldung im Rahmen nicht durchgeht */
+  .hilfe {
+    position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 3;
+    background: #fff; color: #1b2433; border-radius: 16px; padding: 12px 14px; font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35); display: none; gap: 10px; align-items: center;
+  }
+  .hilfe.zeigen { display: flex; }
+  .hilfe a { margin-left: auto; white-space: nowrap; background: #2f6df0; color: #fff; text-decoration: none; font-weight: 700; padding: 8px 12px; border-radius: 12px; }
+  .hilfe button { border: 0; background: transparent; font-size: 18px; color: #8c98a8; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="lade" id="lade"><img src="logo-192.png" alt=""><div>Familienplaner wird geöffnet …</div></div>
+<iframe id="app" title="Familienplaner"
+  allow="clipboard-read; clipboard-write; web-share; fullscreen; screen-wake-lock; geolocation"
+  referrerpolicy="no-referrer-when-downgrade"></iframe>
+<div class="hilfe" id="hilfe">
+  <span>Leer oder Fehlermeldung? Einmal direkt bei Google anmelden, dann hierher zurück.</span>
+  <a id="direkt" target="_blank" rel="noopener">Anmelden</a>
+  <button type="button" id="hilfeZu" aria-label="Schließen">✕</button>
+</div>
+<script>
+  // Adresse der Web-App (Bereitstellung „Familienplaner", bleibt bei jedem redeploy gleich)
+  var APP = 'https://script.google.com/macros/s/AKfycbxCNBIz01XV5Fl_klVXYJOHmZgW6m195KMIQKXUY1582UPtZy4ObVir6pknY-73NSie/exec';
+  var rahmen = document.getElementById('app');
+  var lade = document.getElementById('lade');
+  var hilfe = document.getElementById('hilfe');
+  document.getElementById('direkt').href = APP;
+  document.getElementById('hilfeZu').onclick = function () { hilfe.classList.remove('zeigen'); };
+
+  rahmen.addEventListener('load', function () { lade.classList.add('weg'); });
+  rahmen.src = APP + (location.hash || '');   // #tablet wird durchgereicht
+
+  // Die App meldet sich per postMessage, sobald sie wirklich läuft. Kommt die
+  // Meldung nicht (Google will erst eine Anmeldung sehen, die im Rahmen nicht
+  // geht), erscheint nach 8 Sekunden die Hilfe mit dem direkten Link.
+  var bereit = false;
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.familienplaner !== 'bereit') return;
+    bereit = true;
+    lade.classList.add('weg');
+    hilfe.classList.remove('zeigen');
+  });
+  setTimeout(function () { if (!bereit) hilfe.classList.add('zeigen'); }, 8000);
+
+  // Für „App installieren" (Android/Chrome)
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>
